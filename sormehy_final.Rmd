@@ -89,7 +89,7 @@ selectInput("count_type", label = "Select Type of Count:", choices = Count.Type)
 #selectInput("ind_ind", label = "Select Detailed Industries:", choices = Ind.Industries)
 
 checkboxGroupInput("ch_state", "Select States to Compare:", choices = State.op,
-                  selected = c("PA", "Ohio", "Illinois"), inline = TRUE
+                  selected = c("Pennsylvania", "Ohio", "Illinois"), inline = TRUE
                   )
 
 checkboxGroupInput("ind_ind", "Select Detailed Industries:", choices = Ind.Industries,
@@ -116,9 +116,9 @@ Page with Tabset {.tabset .tabset-fade}
 # })
 
 industry_subset <- reactive({
-  nes_st0418_p %>%
-    filter(
-      str_detect(Industry.Title, input$ind_ind)
+    filter(nes_st0418_p,
+      str_detect(Industry.Title, input$ind_ind) |
+          ST_n == input$ch_state
     )
 })
 
@@ -231,7 +231,16 @@ plotlyOutput("compare.plot")
 ```
 
 
+Column {data-width=350}
+-----------------------------------------------------------------------
 
+### Industry Details {data-width=400}
+
+```{r}
+renderTable({
+  industry_subset()
+})
+```
 
 
 
