@@ -2,10 +2,15 @@
 title: "NES Pennsylvania Construction & Industry"
 output: 
  flexdashboard::flex_dashboard:
-   orientation: columns
+   orientation: rows
    source_code: embed
 runtime: shiny
 ---
+
+```{r setup, include=FALSE}
+#knitr::opts_knit$set(root.dir = normalizePath())
+knitr::opts_chunk$set(echo = FALSE)
+```
 
 
 ```{r context="setup", include=FALSE}
@@ -30,7 +35,9 @@ require(readxl)
 
 ## load raw data
 #data <- read.csv("nes_selectdata2.csv")
-data <- read.csv("/Users/sorme/OneDrive/Documents/GitHub/final_sormehy/nes_selectdata.csv")
+#data <- read.csv("/Users/sorme/OneDrive/Documents/GitHub/final_sormehy/nes_selectdata.csv")
+#data <- read.csv("nes_selectdata.csv")
+data <- read.csv("nes_extratrim.csv")
 #data <- read.csv("~/sormehy_final/nes_trimmed.csv")
 
 ## Make the data easier to read for the user
@@ -72,6 +79,7 @@ State.op <- c("Pennsylvania", "Ohio", "Illinois", "Montana")
 ## PICK THE THREE out of FOUR STATES FOR COMPARISON
 nes_st0418_p <- nes_st0418_p %>% mutate(ST_n = ifelse(ST == 17, 'Illinois', ifelse(ST == 39, 'Ohio', ifelse(ST == 42, 'Pennsylvania', ifelse(ST == 30, 'Montana', 'NaN')))))
 
+#print(getwd())
 
 ```
 
@@ -115,19 +123,29 @@ Page with Tabset {.tabset .tabset-fade}
 #     )
 # })
 
+# industry_subset <- reactive({
+#     filter(nes_st0418_p,
+#       Industry.Title %in% input$ind_ind |
+#           ST_n == input$ch_state
+#     )
+# })
+
+# industry_subset <- reactive({
+#     nes_st0418_p[nes_st0418_p$Industry.Title %in% input$ind_ind,]
+#              nes_st0418_p[nes_st0418_p$ST_n %in% input$ch_state,]
+# })
+
 industry_subset <- reactive({
-    filter(nes_st0418_p,
-      str_detect(Industry.Title, input$ind_ind) |
-          ST_n == input$ch_state
-    )
+    nes_st0418_p[nes_st0418_p$Industry.Title %in% input$ind_ind & nes_st0418_p$ST_n %in% input$ch_state,]
 })
 
-state_subset <- reactive({
-  nes_st0418_p %>%
-    filter(
-      str_detect(ST_n, input$ch_state)
-    )
-})
+
+# state_subset <- reactive({
+#   nes_st0418_p %>%
+#     filter(
+#       ST_n %in% input$ch_state)
+#     )
+# })
 
 data_year <- reactive({
     filter(data, 
