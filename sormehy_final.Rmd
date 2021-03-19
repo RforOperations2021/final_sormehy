@@ -57,12 +57,21 @@ nes_st0418_p <- data %>% mutate(Industry.Title = ifelse(NAICS == 23, 'Constructi
 
 NAICS.Categories = c("^4853", "^23", "^48")
 Big.Industries = c('Taxi & Limousine Service', 'Construction', 'Truck Transportation')
-Count.Type = c("Receipts", "Establishments")
+Count.Type = c("Total_RCPTOT", "Total_ESTAB")
+Ind.Industries = c("Taxi and Limousine Service", "Truck Transportation", "General Freight Trucking", "General Freight Trucking, Local", 
+           "General Freight Trucking, Long-Distance", "Specialized Freight Trucking", "Construction", "Construction of Buildings", 
+           "Residential Building Construction", "Nonresidential Building Construction", "Heavy and Civil Engineering Construction",
+           "Utility System Construction", "Land Subdivision-1", "Land Subdivision-2", "Highway, Street, and Bridge Construction-1",
+           "Highway, Street, and Bridge Construction-2", "Other Heavy and Civil Engineering Construction-1", "Other Heavy and Civil Engineering Construction-2",
+           "Specialty Trade Contractors", "Foundation, Structure, & Building Exterior Contractors", "Building Equipment Contractors", 
+           "Electrical Contractors and Other Wiring Installation Contractors", "Plumbing, Heating, and Air-Conditioning Contractors",
+           "Other Building Equipment Contractors", "Building Finishing Contractors", "Other Specialty Trade Contractors")
+State.op <- c("Pennsylvania", "Ohio", "Illinois", "Montana")
 
 
 ## PICK THE THREE out of FOUR STATES FOR COMPARISON
-nes_st0418_p <- nes_st0418_p %>% mutate(ST_n = ifelse(ST == 17, 'Illinois', ifelse(ST == 39, 'Ohio', ifelse(ST == 42, 'Pennsylvania',
-                                                                                                    ifelse(ST == 30, 'Montana')))))
+nes_st0418_p <- nes_st0418_p %>% mutate(ST_n = ifelse(ST == 17, 'Illinois', ifelse(ST == 39, 'Ohio', ifelse(ST == 42, 'Pennsylvania', ifelse(ST == 30, 'Montana', 'NaN')))))
+
 
 ```
 
@@ -73,21 +82,21 @@ Inputs Column {.sidebar}
 
 selectInput("naics_var", label = "Select NAICS Category:", choices = NAICS.Categories)
 
-selectInput("employed_year", label = "Select Year of Interest:", choices = Employed.by.Year)
+selectInput("big_ind", label = "Select Industry Title Categories:", choices = Big.Industries)
 
-selectInput("changes_emp", label = "Select Type of Change:", choices = Changes.in.Employment)
+selectInput("count_type", label = "Select Type of Count:", choices = Count.Type)
 
-#checkboxGroupInput("cyl", "Cylinders", choices = c("4", "6", "8"),
-#                   selected = c("4", "6", "8"), inline = TRUE
-#                   )
+#selectInput("ind_ind", label = "Select Detailed Industries:", choices = Ind.Industries)
 
-#sliderInput("hp", "Horsepower",
-#            min = min(mtcars$hp), max = max(mtcars$hp),
-#            value = range(mtcars$hp)
-#            )
+checkboxGroupInput("ch_state", "Select States to Compare:", choices = State.op,
+                  selected = c("PA", "Ohio", "Illinois"), inline = TRUE
+                  )
 
-#radioButtons("plot_type", "Weight plot type", 
-#             choices = c("Histogram", "Violin plot"), selected = c("Histogram"))
+checkboxGroupInput("ind_ind", "Select Detailed Industries:", choices = Ind.Industries,
+                  selected = c("Taxi and Limousine Service", "Truck Transportation", "Construction"), inline = TRUE
+                  )
+
+
 
 ```
 
@@ -98,34 +107,36 @@ Page with Tabset {.tabset .tabset-fade}
 ### Segment Plot of Number of Workers in Given Industry
 
 ```{r context="server"}
-mpg_subset <- reactive({
-  mtcars %>%
+
+# industry_subset <- reactive({
+#   nes_st0418_p %>%
+#     filter(
+#       str_detect(Industry.Title, input$ind_ind)
+#     )
+# })
+
+industry_subset <- reactive({
+  nes_st0418_p %>%
     filter(
-      hp >= input$hp[1],
-      hp <= input$hp[2],
-      cyl %in% input$cyl
+      str_detect(Industry.Title, input$ind_ind)
     )
 })
 
-#output$scatter <- renderPlot({
-#  ggplot(mpg_subset(), aes(x = wt, y = mpg, color = factor(cyl))) +
-#    geom_point()
-#})
-
-#construction <- pa.ind.emp.raw %>%
-#  filter(str_detect(NAICS, "^23"))
-
-industry_subset <- reactive({
-  data %>%
+state_subset <- reactive({
+  nes_st0418_p %>%
     filter(
-      str_detect(NAICS, input$naics_var)
+      str_detect(ST_n, input$ch_state)
     )
 })
 
 data_year <- reactive({
     filter(data, 
-      input$employed_year
+      input$big_ind
     )
+})
+
+count_type <- reactive({
+    filter(nes_st0418_p, input$count_type)
 })
 
 output$scatter <- renderPlotly({
@@ -163,6 +174,44 @@ output$mod.plot <- renderPlotly({
     
 })
 
+output$compare.plot <- renderPlotly({
+    if(input$count_type == 'Receipts'){
+  ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_RCPTOT/1000000), color = ST_n)) +
+    geom_line() + geom_point() +
+  labs(title='Industry Growth Over Time (2004 - 2018)', 
+       x = 'Year', y = 'Total Receipts (in millions) in Given Industry and State') +
+    facet_wrap('Industry.Title') + theme(
+plot.title = element_text(size=12, face="bold"),
+axis.title.x = element_text(size=13),
+axis.title.y = element_text(size=13)))
+    }else{
+        ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_ESTAB/10000), color = ST_n)) +
+    geom_line() + geom_point() +
+  labs(title='Industry Growth Over Time (2004 - 2018)', 
+       x = 'Year', y = 'Total Establishments (in 10,000s)') +
+    facet_wrap('Industry.Title') + theme(
+plot.title = element_text(size=12, face="bold"),
+axis.title.x = element_text(size=13),
+axis.title.y = element_text(size=13)))
+    }
+})
+
+# p3 <- nes_st0418_p %>% group_by(ST, NAICS) %>%
+#   filter(NAICS == 23 | NAICS == 484 | NAICS == 4853) %>%
+#   ggplot(aes(x=Year, y=(Total_RCPTOT/1000000), color = ST_n)) +
+#     geom_line() + geom_point() +
+#   labs(title='Industry Growth Over Time (2004 - 2018)',
+#        x = 'Year', y = 'Total Receipts (in millions) in Given Industry and State') +
+#     facet_wrap('Industry.Title') + theme(
+# plot.title = element_text(size=12, face="bold"),
+# axis.title.x = element_text(size=13),
+# axis.title.y = element_text(size=13)
+# )
+# 
+# # Turn it interactive with ggplotly
+# p3.p <- ggplotly(p3)
+# p3.p
+
 
 #renderPlotly({
 #  plot_ly(data, x=~data[[input$naics_var]], )
@@ -177,63 +226,11 @@ output$mod.plot <- renderPlotly({
 
 ```{r context="render"}
 #plotlyOutput("scatter.ordered")
-plotlyOutput("mod.plot")
-
+#plotlyOutput("mod.plot")
+plotlyOutput("compare.plot")
 ```
 
-### Histogram of Changes
 
-```{r context="server"}
-
-industry_subset <- reactive({
-  data %>%
-    filter(
-      str_detect(NAICS, input$naics_var)
-    )
-})
-
-output$plot_hist <- renderPlotly({
-  
-  if(input$changes_emp == "Change.Level"){
-    
-    # Generate Plot ----------------------------------------------
-    ggplot(data = industry_subset(), aes(x = reorder(Industry.Title, -Change.Level), y = Change.Level, fill = Industry.Title)) + geom_bar(stat = "identity") +
-      theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ 
-    labs(x='Industry', y='Projected Difference in Count (2018 to 2028)')
-}  else if(input$changes_emp == "Change.Percent") {
-    ggplot(data = industry_subset(), aes(x = reorder(Industry.Title, -Change.Percent), y = Change.Percent, fill = Industry.Title)) + geom_bar(stat = "identity")+
-    theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ 
-    labs(x='Industry', y='Projected Percentage Change (2018 to 2028)')
-}else{
-  ggplot(data = industry_subset(), aes(x = reorder(Industry.Title, -Avg.Annual.Chng), y = Avg.Annual.Chng, fill = Industry.Title)) + geom_bar(stat = "identity")+
-    theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ 
-    labs(x='Industry', y='Projected Average Annual Change (2018 to 2028)')
-}
-})
-  
-  # A plot showing the height of characters -----------------------------------
-  output$plot_height <- renderPlotly({
-    dat <- subset(mwInput(),  variable == "height")
-    ggplot(data = dat, aes(x = name, y = as.numeric(value), fill = name)) + geom_bar(stat = "identity")
-  })
-
-```
-
-```{r context="render"}
-plotlyOutput("plot_hist")
-
-```
-
-Column {data-width=350}
------------------------------------------------------------------------
-
-### Industry Details {data-width=400}
-
-```{r}
-renderTable({
-  industry_subset()
-})
-```
 
 
 
