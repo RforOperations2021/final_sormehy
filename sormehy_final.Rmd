@@ -29,8 +29,9 @@ require(readxl)
 ```{r data}
 
 ## load raw data
-data <- read.csv("nes_selectdata2.csv")
-data <- read.csv("nes_trimmed.csv")
+#data <- read.csv("nes_selectdata2.csv")
+data <- read.csv("/Users/sorme/OneDrive/Documents/GitHub/final_sormehy/nes_trimmed.csv")
+#data <- read.csv("~/sormehy_final/nes_trimmed.csv")
 
 ## rename columns
 colnames(data) <- c("NAICS",
