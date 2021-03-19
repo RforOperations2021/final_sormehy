@@ -30,44 +30,210 @@ require(readxl)
 
 ## load raw data
 #data <- read.csv("nes_selectdata2.csv")
-data <- read.csv("/Users/sorme/OneDrive/Documents/GitHub/final_sormehy/nes_trimmed.csv")
+data <- read.csv("/Users/sorme/OneDrive/Documents/GitHub/final_sormehy/nes_selectdata.csv")
 #data <- read.csv("~/sormehy_final/nes_trimmed.csv")
 
-## rename columns
-colnames(data) <- c("NAICS",
-    "Industry.Title",
-    "Emp.2018",
-    "Emp.2028",
-    "Change.Level",
-    "Change.Percent",
-    "Avg.Annual.Chng")
+## Make the data easier to read for the user
+nes_st0418_p <- data %>% mutate(Industry.Title = ifelse(NAICS == 23, 'Construction',
+                  ifelse(NAICS == 4853, 'Taxi & Limousine Service', ifelse(NAICS == 484, 'Truck Transportation', ifelse(NAICS == 4841, 'General Freight Trucking',
+                  ifelse(NAICS == 48411, 'General Freight Trucking, Local', ifelse(NAICS == 48412, 'General Freight Trucking, Long-Distance', 
+                  ifelse(NAICS == 4842, 'Specialized Freight Trucking', ifelse(NAICS == 236, 'Construction of Buildings', 
+                  ifelse(NAICS == 2361, 'Residential Building Construction', ifelse(NAICS == 2362, 'Nonresidential Building Construction', 
+                  ifelse(NAICS == 237, 'Heavy & Civil Engineering Construction', ifelse(NAICS == 2371, 'Utility System Construction',
+                  ifelse(NAICS == 2372 | 23721, 'Land Subdivision', ifelse(NAICS == 2373 | 23731, 'Highway, Street, & Bridge Construction', 
+                  ifelse(NAICS == 2379 | 23799, 'Other Heavy & Civ Eng Construction', ifelse(NAICS == 238, "Specialty Trade Contractors",
+                    ifelse(NAICS == 2381, "Foundation, Structure, & Building Exterior Contractors",
+                    ifelse(NAICS == 2382, "Building Equipment Contractors",
+                    ifelse(NAICS == 23821, "Electrical Contractors and Other Wiring Installation Contractors",
+                    ifelse(NAICS == 23822, "Plumbing, Heating, and Air-Conditioning Contractors",
+                    ifelse(NAICS == 23829, "Other Building Equipment Contractors",
+                    ifelse(NAICS == 2383, "Building Finishing Contractors",
+                    ifelse(NAICS == 2389, "Other Specialty Trade Contractors"))))))))))))))))))))))))
 
-data$Emp.2018 <- gsub(",", "", data$Emp.2018)
-data$Emp.2028 <- gsub(",", "", data$Emp.2028)
-data$Change.Level <- gsub(",", "", data$Change.Level)
-data$Change.Percent <- gsub("%", "", data$Change.Percent)
-data$Avg.Annual.Chng <- gsub(",", "", data$Avg.Annual.Chng)
-
-data$Emp.2018 <- as.numeric(as.character(data$Emp.2018))
-data$Emp.2028 <- as.numeric(as.character(data$Emp.2028))
-data$Change.Level <- as.numeric(as.character(data$Change.Level))
-data$Change.Percent <- as.numeric(as.character(data$Change.Percent))
-data$Avg.Annual.Chng <- as.numeric(as.character(data$Avg.Annual.Chng))
 
 #construction <- pa.ind.emp.raw %>%
 #  filter(str_detect(NAICS, "^23"))
 
 
-NAICS.Categories = c("^11", "^21", "^23", "^31", "^32", "^33", "^22", "^42", "^44", "^45", "^48", "^49", "^51", "^52", "^53", "^54", "^55", "^56", "^61",
-                     "^62", "^71", "^72", "^81", "^99", "^123")
+NAICS.Categories = c("^4853", "^23", "^48")
+Big.Industries = c('Taxi & Limousine Service', 'Construction', 'Truck Transportation')
+Count.Type = c("Receipts", "Establishments")
 
-Employed.by.Year = c("Emp.2018", "Emp.2028")
 
-Changes.in.Employment = c("Change.Level", "Change.Percent", "Avg.Annual.Chng")
+## PICK THE THREE out of FOUR STATES FOR COMPARISON
+nes_st0418_p <- nes_st0418_p %>% mutate(ST_n = ifelse(ST == 17, 'Illinois', ifelse(ST == 39, 'Ohio', ifelse(ST == 42, 'Pennsylvania',
+                                                                                                    ifelse(ST == 30, 'Montana')))))
+
+```
+
+Inputs Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r context="render"}
+
+selectInput("naics_var", label = "Select NAICS Category:", choices = NAICS.Categories)
+
+selectInput("employed_year", label = "Select Year of Interest:", choices = Employed.by.Year)
+
+selectInput("changes_emp", label = "Select Type of Change:", choices = Changes.in.Employment)
+
+#checkboxGroupInput("cyl", "Cylinders", choices = c("4", "6", "8"),
+#                   selected = c("4", "6", "8"), inline = TRUE
+#                   )
+
+#sliderInput("hp", "Horsepower",
+#            min = min(mtcars$hp), max = max(mtcars$hp),
+#            value = range(mtcars$hp)
+#            )
+
+#radioButtons("plot_type", "Weight plot type", 
+#             choices = c("Histogram", "Violin plot"), selected = c("Histogram"))
 
 ```
 
 
+Page with Tabset {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Segment Plot of Number of Workers in Given Industry
+
+```{r context="server"}
+mpg_subset <- reactive({
+  mtcars %>%
+    filter(
+      hp >= input$hp[1],
+      hp <= input$hp[2],
+      cyl %in% input$cyl
+    )
+})
+
+#output$scatter <- renderPlot({
+#  ggplot(mpg_subset(), aes(x = wt, y = mpg, color = factor(cyl))) +
+#    geom_point()
+#})
+
+#construction <- pa.ind.emp.raw %>%
+#  filter(str_detect(NAICS, "^23"))
+
+industry_subset <- reactive({
+  data %>%
+    filter(
+      str_detect(NAICS, input$naics_var)
+    )
+})
+
+data_year <- reactive({
+    filter(data, 
+      input$employed_year
+    )
+})
+
+output$scatter <- renderPlotly({
+  ggplotly(ggplot(industry_subset(), mapping = aes(x = Industry.Title, xend = Industry.Title, y = Emp.2018, yend = 0, color = Industry.Title)) + 
+    geom_point(size = 3) +
+  geom_segment(size = 1)+
+  coord_flip() + 
+  labs(x='', y='Number of Employees', title='Pennsylvanians Employed in Given Industry'))
+})
+
+output$scatter.ordered <- renderPlotly({
+  ggplotly(ggplot(data = industry_subset(), mapping = aes(x = reorder(Industry.Title, -Emp.2018), xend = reorder(Industry.Title, -Emp.2018), y = Emp.2018, yend = 0, color = Industry.Title)) + 
+    geom_point() +
+      geom_segment()+
+    coord_flip() + 
+    labs(x='', y='Number of Employees', title='Pennsylvanians Employed in Given Industry') + theme(legend.position = "none"))
+})
+
+output$mod.plot <- renderPlotly({
+  
+  if(input$employed_year == "Emp.2018"){
+    ggplotly(ggplot(data = industry_subset(), mapping = aes(x = reorder(Industry.Title, -Emp.2018), xend = reorder(Industry.Title, -Emp.2018), y = Emp.2018, yend = 0, color = Industry.Title)) + 
+    geom_point() +
+      geom_segment()+
+    coord_flip() + 
+    labs(x='', y='Number of Employees', title='Pennsylvanians Employed in Given Industry') + theme(legend.position = "none"))
+  }
+  else {
+    ggplotly(ggplot(data = industry_subset(), mapping = aes(x = reorder(Industry.Title, -Emp.2028), xend = reorder(Industry.Title, -Emp.2028), y = Emp.2028, yend = 0, color = Industry.Title)) + 
+    geom_point() +
+      geom_segment()+
+    coord_flip() + 
+    labs(x='', y='Number of Employees', title='Pennsylvanians Employed in Given Industry') + theme(legend.position = "none"))
+  }
+    
+})
+
+
+#renderPlotly({
+#  plot_ly(data, x=~data[[input$naics_var]], )
+#})
+
+#ggplot(data = construction, mapping = aes(x = Industry.Title, xend = Industry.Title, y = Emp.2018, yend = 0)) + geom_point() +
+#  geom_segment()+
+#  coord_flip() + 
+#  labs(x='', y='Current Count', title='Employed in Construction')
+
+```
+
+```{r context="render"}
+#plotlyOutput("scatter.ordered")
+plotlyOutput("mod.plot")
+
+```
+
+### Histogram of Changes
+
+```{r context="server"}
+
+industry_subset <- reactive({
+  data %>%
+    filter(
+      str_detect(NAICS, input$naics_var)
+    )
+})
+
+output$plot_hist <- renderPlotly({
+  
+  if(input$changes_emp == "Change.Level"){
+    
+    # Generate Plot ----------------------------------------------
+    ggplot(data = industry_subset(), aes(x = reorder(Industry.Title, -Change.Level), y = Change.Level, fill = Industry.Title)) + geom_bar(stat = "identity") +
+      theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ 
+    labs(x='Industry', y='Projected Difference in Count (2018 to 2028)')
+}  else if(input$changes_emp == "Change.Percent") {
+    ggplot(data = industry_subset(), aes(x = reorder(Industry.Title, -Change.Percent), y = Change.Percent, fill = Industry.Title)) + geom_bar(stat = "identity")+
+    theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ 
+    labs(x='Industry', y='Projected Percentage Change (2018 to 2028)')
+}else{
+  ggplot(data = industry_subset(), aes(x = reorder(Industry.Title, -Avg.Annual.Chng), y = Avg.Annual.Chng, fill = Industry.Title)) + geom_bar(stat = "identity")+
+    theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ 
+    labs(x='Industry', y='Projected Average Annual Change (2018 to 2028)')
+}
+})
+  
+  # A plot showing the height of characters -----------------------------------
+  output$plot_height <- renderPlotly({
+    dat <- subset(mwInput(),  variable == "height")
+    ggplot(data = dat, aes(x = name, y = as.numeric(value), fill = name)) + geom_bar(stat = "identity")
+  })
+
+```
+
+```{r context="render"}
+plotlyOutput("plot_hist")
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Industry Details {data-width=400}
+
+```{r}
+renderTable({
+  industry_subset()
+})
+```
 
 
 
