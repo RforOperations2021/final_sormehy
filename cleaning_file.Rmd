@@ -99,7 +99,7 @@ nes2018 <- select(three.states.2018df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2018<- nes2018 %>% mutate(Year = 2018)
 
 nes2018 <- nes2018 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2018 <- select(nes2018, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2018 <- select(nes2018, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2018 <- unique(nes_st2018)
 
 ### 2017
@@ -113,7 +113,7 @@ nes2017 <- select(three.states.2017df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2017<- nes2017 %>% mutate(Year = 2017)
 
 nes2017 <- nes2017 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2017 <- select(nes2017, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2017 <- select(nes2017, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2017 <- unique(nes_st2017)
 
 ### 2016
@@ -128,7 +128,7 @@ nes2016 <- select(three.states.2016df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2016<- nes2016 %>% mutate(Year = 2016)
 
 nes2016 <- nes2016 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2016 <- select(nes2016, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2016 <- select(nes2016, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2016 <- unique(nes_st2016)
 
 ### 2015
@@ -143,7 +143,7 @@ nes2015 <- select(three.states.2015df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2015<- nes2015 %>% mutate(Year = 2015)
 
 nes2015 <- nes2015 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2015 <- select(nes2015, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2015 <- select(nes2015, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2015 <- unique(nes_st2015)
 
 ### 2014
@@ -160,7 +160,7 @@ nes2014 <- select(three.states.2014df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2014<- nes2014 %>% mutate(Year = 2014)
 
 nes2014 <- nes2014 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2014 <- select(nes2014, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2014 <- select(nes2014, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2014 <- unique(nes_st2014)
 
 ### 2013
@@ -176,7 +176,7 @@ nes2013 <- select(three.states.2013df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2013<- nes2013 %>% mutate(Year = 2013)
 
 nes2013 <- nes2013 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2013 <- select(nes2013, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2013 <- select(nes2013, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2013 <- unique(nes_st2013)
 
 ### 2012
@@ -193,7 +193,7 @@ nes2012 <- select(three.states.2012df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2012<- nes2012 %>% mutate(Year = 2012)
 
 nes2012 <- nes2012 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2012 <- select(nes2012, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2012 <- select(nes2012, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2012 <- unique(nes_st2012)
 
 ### 2011
@@ -209,7 +209,7 @@ nes2011 <- select(three.states.2011df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2011<- nes2011 %>% mutate(Year = 2011)
 
 nes2011 <- nes2011 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2011 <- select(nes2011, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2011 <- select(nes2011, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2011 <- unique(nes_st2011)
 
 ### 2010
@@ -225,7 +225,7 @@ nes2010 <- select(three.states.2010df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2010<- nes2010 %>% mutate(Year = 2010)
 
 nes2010 <- nes2010 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2010 <- select(nes2010, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2010 <- select(nes2010, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2010 <- unique(nes_st2010)
 
 ### 2009
@@ -240,7 +240,7 @@ nes2009 <- select(three.states.2009df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2009<- nes2009 %>% mutate(Year = 2009)
 
 nes2009 <- nes2009 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2009 <- select(nes2009, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2009 <- select(nes2009, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2009 <- unique(nes_st2009)
 
 ### 2008
@@ -264,7 +264,7 @@ nes2008 <- select(three.states.2008df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2008<- nes2008 %>% mutate(Year = 2008)
 
 nes2008 <- nes2008 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2008 <- select(nes2008, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2008 <- select(nes2008, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2008 <- unique(nes_st2008)
 
 ### 2007
@@ -279,7 +279,7 @@ nes2007 <- select(three.states.2007df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2007<- nes2007 %>% mutate(Year = 2007)
 
 nes2007 <- nes2007 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2007 <- select(nes2007, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2007 <- select(nes2007, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2007 <- unique(nes_st2007)
 
 ### 2006
@@ -296,7 +296,7 @@ nes2006 <- select(three.states.2006df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2006<- nes2006 %>% mutate(Year = 2006)
 
 nes2006 <- nes2006 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2006 <- select(nes2006, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2006 <- select(nes2006, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2006 <- unique(nes_st2006)
 
 ### 2005
@@ -312,7 +312,7 @@ nes2005 <- select(three.states.2005df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2005<- nes2005 %>% mutate(Year = 2005)
 
 nes2005 <- nes2005 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2005 <- select(nes2005, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2005 <- select(nes2005, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2005 <- unique(nes_st2005)
 
 ### 2004
@@ -328,7 +328,7 @@ three.states.2004df <- filter(three.states.2004df, NAICS ==4853 | NAICS == 484 |
 nes2004 <- select(three.states.2004df, ST, CTY, NAICS, RCPTOT, ESTAB)
 nes2004<- nes2004 %>% mutate(Year = 2004)
 nes2004 <- nes2004 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
-nes_st2004 <- select(nes2004, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2004 <- select(nes2004, ST, CTY, NAICS, Total_RCPTOT, Total_ESTAB, Year)
 nes_st2004 <- unique(nes_st2004)
 ```
 

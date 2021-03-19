@@ -25,22 +25,49 @@ require(readxl)
 
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r data}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## load raw data
+data <- read.csv("nes_selectdata2.csv")
+data <- read.csv("nes_trimmed.csv")
 
-```{r cars}
-summary(cars)
+## rename columns
+colnames(data) <- c("NAICS",
+    "Industry.Title",
+    "Emp.2018",
+    "Emp.2028",
+    "Change.Level",
+    "Change.Percent",
+    "Avg.Annual.Chng")
+
+data$Emp.2018 <- gsub(",", "", data$Emp.2018)
+data$Emp.2028 <- gsub(",", "", data$Emp.2028)
+data$Change.Level <- gsub(",", "", data$Change.Level)
+data$Change.Percent <- gsub("%", "", data$Change.Percent)
+data$Avg.Annual.Chng <- gsub(",", "", data$Avg.Annual.Chng)
+
+data$Emp.2018 <- as.numeric(as.character(data$Emp.2018))
+data$Emp.2028 <- as.numeric(as.character(data$Emp.2028))
+data$Change.Level <- as.numeric(as.character(data$Change.Level))
+data$Change.Percent <- as.numeric(as.character(data$Change.Percent))
+data$Avg.Annual.Chng <- as.numeric(as.character(data$Avg.Annual.Chng))
+
+#construction <- pa.ind.emp.raw %>%
+#  filter(str_detect(NAICS, "^23"))
+
+
+NAICS.Categories = c("^11", "^21", "^23", "^31", "^32", "^33", "^22", "^42", "^44", "^45", "^48", "^49", "^51", "^52", "^53", "^54", "^55", "^56", "^61",
+                     "^62", "^71", "^72", "^81", "^99", "^123")
+
+Employed.by.Year = c("Emp.2018", "Emp.2028")
+
+Changes.in.Employment = c("Change.Level", "Change.Percent", "Avg.Annual.Chng")
+
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
