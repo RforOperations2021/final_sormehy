@@ -1,0 +1,349 @@
+---
+title: "Cleaning NES Data"
+subtitle: ""
+author: "Sormeh Yazdi"
+date: "March 2021"
+output: 
+  html_document:
+    theme: paper
+    highlight: tango
+    toc: true
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(ggplot2movies) # for movies dataset
+library(boot) 
+library(splines)
+library(broom)
+library(plotly)
+library(tidyverse)
+library(dygraphs)
+library(xts)          # To make the convertion data-frame / xts format
+library(lubridate)
+
+library(hrbrthemes)
+library(latticeExtra)
+```
+
+## Loading the Data
+
+```{r}
+## Load data (very large)
+#cpsdata = read.csv(file = 'cps_00001.csv', header = TRUE)
+
+nesdata2018 = read.csv(file = "../../Y2_S2/Systems/nonemp18co.csv", header = TRUE)
+nesdata2017 = read.csv(file = "../../Y2_S2/Systems/nonemp17co.csv", header = TRUE)
+nesdata2016 = read.csv(file = "../../Y2_S2/Systems/nonemp16co.csv", header = TRUE)
+nesdata2015 = read.csv(file = "../../Y2_S2/Systems/nonemp15co.csv", header = TRUE)
+nesdata2014 = read.csv(file = "../../Y2_S2/Systems/nonemp14co.csv", header = TRUE)
+nesdata2013 = read.csv(file = "../../Y2_S2/Systems/nonemp13co.csv", header = TRUE)
+nesdata2012 = read.csv(file = "../../Y2_S2/Systems/nonemp12co.csv", header = TRUE)
+nesdata2011 = read.csv(file = "../../Y2_S2/Systems/nonemp11co.csv", header = TRUE)
+nesdata2010 = read.csv(file = "../../Y2_S2/Systems/nonemp10co.csv", header = TRUE)
+nesdata2009 = read.csv(file = "../../Y2_S2/Systems/nonemp09co.csv", header = TRUE)
+nesdata2008 = read.csv(file = "../../Y2_S2/Systems/nonemp08co.csv", header = TRUE)
+nesdata2007 = read.csv(file = "../../Y2_S2/Systems/nonemp07co.csv", header = TRUE)
+nesdata2006 = read.csv(file = "../../Y2_S2/Systems/nonemp06co.csv", header = TRUE)
+nesdata2005 = read.csv(file = "../../Y2_S2/Systems/nonemp05co.csv", header = TRUE)
+nesdata2004 = read.csv(file = "../../Y2_S2/Systems/nonemp04co.csv", header = TRUE)
+
+## Wanted states:
+State <- c("PA", "Ohio", "Illinois", "Montana")
+Fips.Code <- c(42, 39, 17, 30)
+
+wanted.st <- data.frame(State, Fips.Code)
+
+print (wanted.st)
+
+## Wanted NAICS:
+NAICS <- c(4853, 484, 4841, 48411, 48412, 4842, 23, 236, 2361, 2362, 237, 2371, 2372, 23721, 2373, 23731, 2379, 23799, 238, 2381,
+           2382, 23821, 23822, 23829, 2383, 2389)
+Title <- c("Taxi and Limousine Service", "Truck Transportation", "General Freight Trucking", "General Freight Trucking, Local", 
+           "General Freight Trucking, Long-Distance", "Specialized Freight Trucking", "Construction", "Construction of Buildings", 
+           "Residential Building Construction", "Nonresidential Building Construction", "Heavy and Civil Engineering Construction",
+           "Utility System Construction", "Land Subdivision-1", "Land Subdivision-2", "Highway, Street, and Bridge Construction-1",
+           "Highway, Street, and Bridge Construction-2", "Other Heavy and Civil Engineering Construction-1", "Other Heavy and Civil Engineering Construction-2",
+           "Specialty Trade Contractors", "Foundation, Structure, & Building Exterior Contractors", "Building Equipment Contractors", 
+           "Electrical Contractors and Other Wiring Installation Contractors", "Plumbing, Heating, and Air-Conditioning Contractors",
+           "Other Building Equipment Contractors", "Building Finishing Contractors", "Other Specialty Trade Contractors")
+
+wanted.naics <- data.frame(NAICS, Title)
+print(wanted.naics)
+```
+
+## Cleaning the Data
+
+```{r}
+## Subsetting the data
+three.states.2018df <- filter(nesdata2018, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2018df <- filter(three.states.2018df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+nes2018 <- select(three.states.2018df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2018<- nes2018 %>% mutate(Year = 2018)
+
+nes2018 <- nes2018 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2018 <- select(nes2018, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2018 <- unique(nes_st2018)
+
+### 2017
+three.states.2017df <- filter(nesdata2017, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2017df <- filter(three.states.2017df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+nes2017 <- select(three.states.2017df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2017<- nes2017 %>% mutate(Year = 2017)
+
+nes2017 <- nes2017 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2017 <- select(nes2017, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2017 <- unique(nes_st2017)
+
+### 2016
+
+three.states.2016df <- filter(nesdata2016, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2016df <- filter(three.states.2016df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+nes2016 <- select(three.states.2016df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2016<- nes2016 %>% mutate(Year = 2016)
+
+nes2016 <- nes2016 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2016 <- select(nes2016, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2016 <- unique(nes_st2016)
+
+### 2015
+names(nesdata2015)<-toupper(names(nesdata2015))
+three.states.2015df <- filter(nesdata2015, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2015df <- filter(three.states.2015df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+nes2015 <- select(three.states.2015df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2015<- nes2015 %>% mutate(Year = 2015)
+
+nes2015 <- nes2015 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2015 <- select(nes2015, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2015 <- unique(nes_st2015)
+
+### 2014
+
+names(nesdata2014)<-toupper(names(nesdata2014))
+three.states.2014df <- filter(nesdata2014, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2014df <- filter(three.states.2014df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+
+nes2014 <- select(three.states.2014df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2014<- nes2014 %>% mutate(Year = 2014)
+
+nes2014 <- nes2014 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2014 <- select(nes2014, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2014 <- unique(nes_st2014)
+
+### 2013
+names(nesdata2013)<-toupper(names(nesdata2013))
+three.states.2013df <- filter(nesdata2013, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2013df <- filter(three.states.2013df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+
+nes2013 <- select(three.states.2013df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2013<- nes2013 %>% mutate(Year = 2013)
+
+nes2013 <- nes2013 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2013 <- select(nes2013, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2013 <- unique(nes_st2013)
+
+### 2012
+
+names(nesdata2012)<-toupper(names(nesdata2012))
+three.states.2012df <- filter(nesdata2012, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2012df <- filter(three.states.2012df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+
+nes2012 <- select(three.states.2012df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2012<- nes2012 %>% mutate(Year = 2012)
+
+nes2012 <- nes2012 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2012 <- select(nes2012, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2012 <- unique(nes_st2012)
+
+### 2011
+names(nesdata2011)<-toupper(names(nesdata2011))
+three.states.2011df <- filter(nesdata2011, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2011df <- filter(three.states.2011df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+
+nes2011 <- select(three.states.2011df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2011<- nes2011 %>% mutate(Year = 2011)
+
+nes2011 <- nes2011 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2011 <- select(nes2011, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2011 <- unique(nes_st2011)
+
+### 2010
+
+names(nesdata2010)<-toupper(names(nesdata2010))
+three.states.2010df <- filter(nesdata2010, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2010df <- filter(three.states.2010df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+nes2010 <- select(three.states.2010df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2010<- nes2010 %>% mutate(Year = 2010)
+
+nes2010 <- nes2010 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2010 <- select(nes2010, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2010 <- unique(nes_st2010)
+
+### 2009
+names(nesdata2009)<-toupper(names(nesdata2009))
+three.states.2009df <- filter(nesdata2009, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2009df <- filter(three.states.2009df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+nes2009 <- select(three.states.2009df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2009<- nes2009 %>% mutate(Year = 2009)
+
+nes2009 <- nes2009 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2009 <- select(nes2009, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2009 <- unique(nes_st2009)
+
+### 2008
+
+names(nesdata2008)<-toupper(names(nesdata2008))
+colnames(nesdata2008) <- c("ST",
+    "CTY",
+    "NAICS",
+    "ESTAB_F",
+    "ESTAB",
+    "RCPTOT_F",
+    "ODD_COL",
+    "RCPTOT")
+three.states.2008df <- filter(nesdata2008, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2008df <- filter(three.states.2008df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+nes2008 <- select(three.states.2008df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2008<- nes2008 %>% mutate(Year = 2008)
+
+nes2008 <- nes2008 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2008 <- select(nes2008, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2008 <- unique(nes_st2008)
+
+### 2007
+names(nesdata2007)<-toupper(names(nesdata2007))
+three.states.2007df <- filter(nesdata2007, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2007df <- filter(three.states.2007df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+nes2007 <- select(three.states.2007df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2007<- nes2007 %>% mutate(Year = 2007)
+
+nes2007 <- nes2007 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2007 <- select(nes2007, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2007 <- unique(nes_st2007)
+
+### 2006
+
+names(nesdata2006)<-toupper(names(nesdata2006))
+three.states.2006df <- filter(nesdata2006, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2006df <- filter(three.states.2006df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+
+nes2006 <- select(three.states.2006df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2006<- nes2006 %>% mutate(Year = 2006)
+
+nes2006 <- nes2006 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2006 <- select(nes2006, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2006 <- unique(nes_st2006)
+
+### 2005
+names(nesdata2005)<-toupper(names(nesdata2005))
+three.states.2005df <- filter(nesdata2005, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2005df <- filter(three.states.2005df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+
+nes2005 <- select(three.states.2005df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2005<- nes2005 %>% mutate(Year = 2005)
+
+nes2005 <- nes2005 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2005 <- select(nes2005, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2005 <- unique(nes_st2005)
+
+### 2004
+
+names(nesdata2004)<-toupper(names(nesdata2004))
+three.states.2004df <- filter(nesdata2004, ST==42 | ST==39 | ST==17 | ST==30)
+three.states.2004df <- filter(three.states.2004df, NAICS ==4853 | NAICS == 484 | NAICS == 4841 | NAICS == 48411 | NAICS == 4842 |
+                                NAICS ==23 | NAICS == 236 | NAICS == 2361 | NAICS == 237 | NAICS == 2371 | NAICS == 2372 | 
+                                NAICS == 23721 | NAICS == 2373 | NAICS == 23731 | NAICS == 2379 | NAICS == 23799 | NAICS ==238 | 
+                                NAICS == 2381 | NAICS == 2382 | NAICS == 23821 | NAICS == 23822 | NAICS == 23829 |
+                                NAICS == 2383 | NAICS == 2389)
+
+nes2004 <- select(three.states.2004df, ST, CTY, NAICS, RCPTOT, ESTAB)
+nes2004<- nes2004 %>% mutate(Year = 2004)
+nes2004 <- nes2004 %>% group_by(ST, NAICS) %>% mutate(Total_RCPTOT = sum(RCPTOT), Total_ESTAB = sum(ESTAB))
+nes_st2004 <- select(nes2004, ST, NAICS, Total_RCPTOT, Total_ESTAB, Year)
+nes_st2004 <- unique(nes_st2004)
+```
+
+```{r}
+#ufoMerged <- do.call("rbind", list(ufo1, ufo2, ufo3, ufo4))
+
+### Merge all into one large dataframe
+nes_st0418 <- do.call("rbind", list(nes_st2004, nes_st2005, nes_st2006, nes_st2007, nes_st2008, nes_st2009,
+                                    nes_st2010, nes_st2011, nes_st2012, nes_st2013, nes_st2014, nes_st2015,
+                                    nes_st2016, nes_st2017, nes_st2018))
+
+write.csv(nes_st0418,"nes_selectdata.csv", row.names = FALSE)
+
+```
+
+
+
+
