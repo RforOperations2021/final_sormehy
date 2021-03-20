@@ -252,38 +252,50 @@ plotlyOutput("compare.plot2")
 ### Mapping
 
 ```{r, controls}
-leaflet() %>%
-  # Basemaps
-  addTiles(group = "OSM (default)") %>%
-  addProviderTiles("Stamen.Toner", group = "Toner") %>%
-  addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
-  # Layers control
-  addLayersControl(
-    baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
-    options = layersControlOptions(collapsed = FALSE)
-  )
+# leaflet() %>%
+#   # Basemaps
+#   addTiles(group = "OSM (default)") %>%
+#   addProviderTiles("Stamen.Toner", group = "Toner") %>%
+#   addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
+#   # Layers control
+#   addLayersControl(
+#     baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
+#     options = layersControlOptions(collapsed = FALSE)
+#   )
 ```
 
 ```{r, polygon}
 # op_data <- read_excel("Geographies_of_Opportunity_Ranking_Well_Being_by_Congressional_District_(114th_Congress).xlsx") %>%
   # mutate(Number = str_pad(Number, 4, pad = "0"))
+# library(raster)
+# cds.load <- shapefile("cb_2018_us_state_500k.shp")
 
-cds.load <- readOGR("./cb_2015_us_cd114_500k/cb_2015_us_cd114_500k.shp", layer = "cb_2015_us_cd114_500k", GDAL1_integer64_policy = TRUE)
+cds.load <- readOGR("cb_2018_us_state_500k.shp", layer = "cb_2018_us_state_500k", GDAL1_integer64_policy = TRUE)
 
 # Just having the matching GEOID's
-cds <- cds.load[cds.load$GEOID %in% op_data$Number,]
+cds <- cds.load[cds.load$GEOID %in% nes_st0418_p$ST,]
 
-cds@data <- merge(cds@data, op_data, sort = FALSE, by.x = "GEOID", by.y = "Number")
+cds@data <- merge(cds@data, nes_st0418_p, sort = FALSE, by.x = "GEOID", by.y = "ST")
 
 # Solution
 pal <- colorNumeric(
   palette = "Purples",
-  domain = cds$`Life Expectancy at Birth (years)`)
+  domain = cds$`Total_RCPTOT`)
 
-leaflet(data = cds) %>%
+output$map.rcp <- renderLeaflet({
+  leaflet(data = cds) %>%
   addProviderTiles("Stamen.Toner") %>%
-  addPolygons(color = ~pal(`Life Expectancy at Birth (years)`), popup = ~paste0("<b>", `Congressional District`, ":</b> ", round(`Life Expectancy at Birth (years)`, 2), " years")) %>%
-  addLegend(position = "bottomright", pal = pal, values = cds$`Life Expectancy at Birth (years)`, title = "Avg Life Expectancy<br>at Birth (years)")
+  addPolygons(color = ~pal(`Total_RCPTOT`), popup = ~paste0("<b>", `Industry.Title`, ":</b> ", round(`Total_RCPTOT`, 2), " years")) %>%
+  addLegend(position = "bottomright", pal = pal, values = cds$`Total_RCPTOT`, title = "Avg Life Expectancy<br>at Birth (years)")
+})
+
+
+
+```
+
+```{r context="render"}
+
+leafletOutput('map.rcp')
 ```
 
 Column {data-width=350}
