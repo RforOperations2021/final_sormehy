@@ -1,11 +1,18 @@
 ---
-title: "NES Pennsylvania Construction & Industry"
-output: 
- flexdashboard::flex_dashboard:
-   orientation: rows
-   source_code: embed
-   theme: flatly
+title: "NES Industry Analysis in 4 States"
+resource_files:
+- cb_2018_us_state_500k.shx
+- cb_2018_us_state_500k.shp.iso.xml
+- cb_2018_us_state_500k.shp.ea.iso.xml
+- cb_2018_us_state_500k.prj
+- cb_2018_us_state_500k.dbf
+- cb_2018_us_state_500k.cpg
 runtime: shiny
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    source_code: embed
+    theme: flatly
 ---
 
 ```{r setup, include=FALSE}
@@ -36,13 +43,9 @@ require(readxl)
 ```{r data}
 
 ## load raw data
-#data <- read.csv("nes_selectdata2.csv")
-#data <- read.csv("/Users/sorme/OneDrive/Documents/GitHub/final_sormehy/nes_selectdata.csv")
 #data <- read.csv("nes_selectdata.csv")
 data <- read.csv("nes_extratrim.csv")
 #data <- read.csv("~/sormehy_final/nes_trimmed.csv")
-# map <- readOGR("cb_2018_us_state_500k.shp", layer = "cb_2018_us_state_500k", GDAL1_integer64_policy = TRUE)
-#map <- readOGR("cb_2018_us_state_500k.shp")
 
 ## Make the data easier to read for the user
 nes_st0418_p <- data %>% mutate(Industry.Title = ifelse(NAICS == 23, 'Construction',
@@ -99,7 +102,6 @@ selectInput("big_ind", label = "Select Industry Title Categories:", choices = Bi
 
 selectInput("count_type", label = "Select Type of Count:", choices = Count.Type)
 
-#selectInput("ind_ind", label = "Select Detailed Industries:", choices = Ind.Industries)
 
 checkboxGroupInput("ch_state", "Select States to Compare:", choices = State.op,
                   selected = c("Pennsylvania", "Ohio", "Illinois"), inline = TRUE
@@ -351,15 +353,6 @@ output$seg.plot <- renderPlotly({
 })
 
 
-#renderPlotly({
-#  plot_ly(data, x=~data[[input$naics_var]], )
-#})
-
-#ggplot(data = construction, mapping = aes(x = Industry.Title, xend = Industry.Title, y = Emp.2018, yend = 0)) + geom_point() +
-#  geom_segment()+
-#  coord_flip() + 
-#  labs(x='', y='Current Count', title='Employed in Construction')
-
 ```
 
 ```{r context="render"}
@@ -379,20 +372,6 @@ renderTable({
   industry_subset()
 })
 
-# output$downloadFile <- downloadHandler(filename = function() { 
-# return(paste("nes_data.csv", sep=''))
-# },
-#     content = function(file){
-#     write.csv(nes_st0418_p, file)
-#                         })
-
-# downloadHandler(filename = function() {
-#      paste('resultset-', Sys.Date(), '.csv', sep='')
-#    },
-#      content = function(file) {
-#      write.csv(industry_subset(), file, row.names = FALSE)
-#    }
-# )
 ```
 
 
