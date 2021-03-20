@@ -24,6 +24,7 @@ library(RColorBrewer)
 library(reshape2)
 library(plotly)
 library(leaflet)
+library(DT)
 require(rgdal)
 require(leaflet.extras)
 require(readxl)
@@ -88,7 +89,6 @@ Inputs Column {.sidebar}
 
 ```{r context="render"}
 
-downloadButton(downloadFile, label = "Download Data")
 
 selectInput("naics_var", label = "Select NAICS Category:", choices = NAICS.Categories)
 
@@ -106,7 +106,14 @@ checkboxGroupInput("ind_ind", "Select Detailed Industries:", choices = Ind.Indus
                   selected = c("Taxi and Limousine Service", "Truck Transportation", "Construction"), inline = TRUE
                   )
 
-
+downloadButton("downloadFile", label = "Download Data")
+downloadHandler(filename = function() {
+     paste('resultset-', Sys.Date(), '.csv', sep='')
+   },
+     content = function(file) {
+     write.csv(industry_subset(), file, row.names = FALSE)
+   }
+)
 
 ```
 
@@ -180,7 +187,7 @@ output$compare.plot <- renderPlotly({
   ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_RCPTOT/1000000), color = ST_n)) +
     geom_line() + geom_point() +
   labs(title='Industry Growth Over Time (2004 - 2018)', 
-       x = 'Year', y = 'Total Receipts (in millions) in Given Industry & State') +
+       x = 'Year', y = 'Total Receipts (in millions) in Given Industry & State', color="State") +
     facet_wrap('Industry.Title') + theme(
 plot.title = element_text(size=12, face="bold"),
 axis.title.x = element_text(size=13),
@@ -189,7 +196,7 @@ axis.title.y = element_text(size=13)))
         ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_ESTAB/10000), color = ST_n)) +
     geom_line() + geom_point() +
   labs(title='Industry Growth Over Time (2004 - 2018)', 
-       x = 'Year', y = 'Total Establishments (in 10,000s)') +
+       x = 'Year', y = 'Total Establishments (in 10,000s)', color="State") +
     facet_wrap('Industry.Title') + theme(
 plot.title = element_text(size=12, face="bold"),
 axis.title.x = element_text(size=13),
@@ -242,12 +249,20 @@ renderTable({
   industry_subset()
 })
 
-output$downloadFile <- downloadHandler(filename = function() { 
-return(paste("nes_data.csv", sep=''))
-},
-    content = function(file){
-    write.csv(data, file)
-                        })
+# output$downloadFile <- downloadHandler(filename = function() { 
+# return(paste("nes_data.csv", sep=''))
+# },
+#     content = function(file){
+#     write.csv(nes_st0418_p, file)
+#                         })
+
+# downloadHandler(filename = function() {
+#      paste('resultset-', Sys.Date(), '.csv', sep='')
+#    },
+#      content = function(file) {
+#      write.csv(industry_subset(), file, row.names = FALSE)
+#    }
+# )
 ```
 
 
