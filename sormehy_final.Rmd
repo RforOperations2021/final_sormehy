@@ -102,9 +102,12 @@ checkboxGroupInput("ch_state", "Select States to Compare:", choices = State.op,
                   selected = c("Pennsylvania", "Ohio", "Illinois"), inline = TRUE
                   )
 
-checkboxGroupInput("ind_ind", "Select Detailed Industries:", choices = Ind.Industries,
-                  selected = c("Taxi and Limousine Service", "Truck Transportation", "Construction"), inline = TRUE
-                  )
+# checkboxGroupInput("ind_ind", "Select Detailed Industries:", choices = Ind.Industries,
+#                   selected = c("Taxi and Limousine Service", "Truck Transportation", "Construction"), inline = TRUE
+#                   )
+selectizeInput("ind_ind", "Select Detailed Industries:", choices= Ind.Industries, 
+               selected = c("Taxi and Limousine Service", "Truck Transportation", "Construction"),
+               multiple = TRUE)
 
 downloadButton("downloadFile", label = "Download Data")
 downloadHandler(filename = function() {
@@ -121,7 +124,7 @@ downloadHandler(filename = function() {
 Page with Tabset {.tabset .tabset-fade}
 -----------------------------------------------------------------------
 
-### Segment Plot of Number of Workers in Given Industry
+### Time Series Comparing States across Industries
 
 ```{r context="server"}
 
@@ -129,13 +132,6 @@ industry_subset <- reactive({
     nes_st0418_p[nes_st0418_p$Industry.Title %in% input$ind_ind & nes_st0418_p$ST_n %in% input$ch_state,]
 })
 
-
-# state_subset <- reactive({
-#   nes_st0418_p %>%
-#     filter(
-#       ST_n %in% input$ch_state)
-#     )
-# })
 
 data_year <- reactive({
     filter(data, 
@@ -145,22 +141,6 @@ data_year <- reactive({
 
 count_type <- reactive({
     filter(nes_st0418_p, input$count_type)
-})
-
-output$scatter <- renderPlotly({
-  ggplotly(ggplot(industry_subset(), mapping = aes(x = Industry.Title, xend = Industry.Title, y = Emp.2018, yend = 0, color = Industry.Title)) + 
-    geom_point(size = 3) +
-  geom_segment(size = 1)+
-  coord_flip() + 
-  labs(x='', y='Number of Employees', title='Pennsylvanians Employed in Given Industry'))
-})
-
-output$scatter.ordered <- renderPlotly({
-  ggplotly(ggplot(data = industry_subset(), mapping = aes(x = reorder(Industry.Title, -Emp.2018), xend = reorder(Industry.Title, -Emp.2018), y = Emp.2018, yend = 0, color = Industry.Title)) + 
-    geom_point() +
-      geom_segment()+
-    coord_flip() + 
-    labs(x='', y='Number of Employees', title='Pennsylvanians Employed in Given Industry') + theme(legend.position = "none"))
 })
 
 output$mod.plot <- renderPlotly({
@@ -204,31 +184,6 @@ axis.title.y = element_text(size=13)))
     }
 })
 
-# p3 <- nes_st0418_p %>% group_by(ST, NAICS) %>%
-#   filter(NAICS == 23 | NAICS == 484 | NAICS == 4853) %>%
-#   ggplot(aes(x=Year, y=(Total_RCPTOT/1000000), color = ST_n)) +
-#     geom_line() + geom_point() +
-#   labs(title='Industry Growth Over Time (2004 - 2018)',
-#        x = 'Year', y = 'Total Receipts (in millions) in Given Industry and State') +
-#     facet_wrap('Industry.Title') + theme(
-# plot.title = element_text(size=12, face="bold"),
-# axis.title.x = element_text(size=13),
-# axis.title.y = element_text(size=13)
-# )
-# 
-# # Turn it interactive with ggplotly
-# p3.p <- ggplotly(p3)
-# p3.p
-
-
-#renderPlotly({
-#  plot_ly(data, x=~data[[input$naics_var]], )
-#})
-
-#ggplot(data = construction, mapping = aes(x = Industry.Title, xend = Industry.Title, y = Emp.2018, yend = 0)) + geom_point() +
-#  geom_segment()+
-#  coord_flip() + 
-#  labs(x='', y='Current Count', title='Employed in Construction')
 
 ```
 
@@ -236,6 +191,58 @@ axis.title.y = element_text(size=13)))
 #plotlyOutput("scatter.ordered")
 #plotlyOutput("mod.plot")
 plotlyOutput("compare.plot")
+```
+
+
+### Time Series Comparing Industries across States
+
+```{r context="server"}
+
+industry_subset <- reactive({
+    nes_st0418_p[nes_st0418_p$Industry.Title %in% input$ind_ind & nes_st0418_p$ST_n %in% input$ch_state,]
+})
+
+
+data_year <- reactive({
+    filter(data, 
+      input$big_ind
+    )
+})
+
+count_type <- reactive({
+    filter(nes_st0418_p, input$count_type)
+})
+
+
+
+output$compare.plot2 <- renderPlotly({
+    if(input$count_type == 'Total_RCPTOT'){
+  ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_RCPTOT/1000000), color = Industry.Title)) +
+    geom_line() + geom_point() +
+  labs(title='Industry Growth Over Time (2004 - 2018)', 
+       x = 'Year', y = 'Total Receipts (in millions) in Given Industry & State', color="Industry") +
+    facet_wrap('ST_n') + theme(
+plot.title = element_text(size=12, face="bold"),
+axis.title.x = element_text(size=13),
+axis.title.y = element_text(size=13)))
+    }else{
+        ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_ESTAB/10000), color = Industry.Title)) +
+    geom_line() + geom_point() +
+  labs(title='Industry Growth Over Time (2004 - 2018)', 
+       x = 'Year', y = 'Total Establishments (in 10,000s)', color="Industry") +
+    facet_wrap('ST_n') + theme(
+plot.title = element_text(size=12, face="bold"),
+axis.title.x = element_text(size=13),
+axis.title.y = element_text(size=13)))
+    }
+})
+
+
+```
+
+```{r context="render"}
+
+plotlyOutput("compare.plot2")
 ```
 
 
