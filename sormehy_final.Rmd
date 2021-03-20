@@ -88,6 +88,8 @@ Inputs Column {.sidebar}
 
 ```{r context="render"}
 
+downloadButton(downloadFile, label = "Download Data")
+
 selectInput("naics_var", label = "Select NAICS Category:", choices = NAICS.Categories)
 
 selectInput("big_ind", label = "Select Industry Title Categories:", choices = Big.Industries)
@@ -178,7 +180,7 @@ output$compare.plot <- renderPlotly({
   ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_RCPTOT/1000000), color = ST_n)) +
     geom_line() + geom_point() +
   labs(title='Industry Growth Over Time (2004 - 2018)', 
-       x = 'Year', y = 'Total Receipts (in millions) in Given Industry and State') +
+       x = 'Year', y = 'Total Receipts (in millions) in Given Industry & State') +
     facet_wrap('Industry.Title') + theme(
 plot.title = element_text(size=12, face="bold"),
 axis.title.x = element_text(size=13),
@@ -239,6 +241,13 @@ Column {data-width=350}
 renderTable({
   industry_subset()
 })
+
+output$downloadFile <- downloadHandler(filename = function() { 
+return(paste("nes_data.csv", sep=''))
+},
+    content = function(file){
+    write.csv(data, file)
+                        })
 ```
 
 
