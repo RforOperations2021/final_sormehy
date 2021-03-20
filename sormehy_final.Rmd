@@ -78,7 +78,7 @@ Ind.Industries = c("Taxi & Limousine Service", "Truck Transportation", "General 
            "Electrical Contractors and Other Wiring Installation Contractors", "Plumbing, Heating, and Air-Conditioning Contractors",
            "Other Building Equipment Contractors", "Building Finishing Contractors", "Other Specialty Trade Contractors")
 State.op <- c("Pennsylvania", "Ohio", "Illinois", "Montana")
-
+Year.op <- c(2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018)
 
 ## PICK THE THREE out of FOUR STATES FOR COMPARISON
 nes_st0418_p <- nes_st0418_p %>% mutate(ST_n = ifelse(ST == 17, 'Illinois', ifelse(ST == 39, 'Ohio', ifelse(ST == 42, 'Pennsylvania', ifelse(ST == 30, 'Montana', 'NaN')))))
@@ -111,6 +111,10 @@ checkboxGroupInput("ch_state", "Select States to Compare:", choices = State.op,
 selectizeInput("ind_ind", "Select Detailed Industries:", choices= Ind.Industries, 
                selected = c("Taxi and Limousine Service", "Truck Transportation", "Construction"),
                multiple = TRUE)
+
+selectizeInput("yr", "Select Year:", choices= Year.op, 
+               selected = c("2012"),
+               multiple = FALSE)
 
 downloadButton("downloadFile", label = "Download Data")
 downloadHandler(filename = function() {
@@ -315,6 +319,53 @@ output$map.rcp <- renderLeaflet({
 
 leafletOutput('map.rcp')
 ```
+
+
+### Segment Plot by Year
+
+```{r context="server"}
+unique_ind <- reactive({
+    nes_st0418_p[nes_st0418_p$Industry.Title %in% input$big_ind & nes_st0418_p$ST_n %in% input$ch_state & nes_st0418_p$Year %in% input$yr,]
+})
+
+
+output$seg.plot <- renderPlotly({
+  
+  if(input$count_type == 'Total_RCPTOT'){
+    ggplotly(ggplot(data = unique_ind(), mapping = aes(x = reorder(Industry.Title, -Year), xend = reorder(Industry.Title, -Year), y = Year, yend = 0, color = Industry.Title)) + 
+    geom_point() +
+      geom_segment()+
+    coord_flip() + 
+    labs(x='', y='Total Value from Receipts', title='Industry Total Value in Given Year') + theme(legend.position = "none"))
+  }
+  else {
+    ggplotly(ggplot(data = unique_ind(), mapping = aes(x = reorder(Industry.Title, -Year), xend = reorder(Industry.Title, -Year), y = Year, yend = 0, color = Industry.Title)) + 
+    geom_point() +
+      geom_segment()+
+    coord_flip() + 
+    labs(x='', y='Total Number of Establishments', title='Industry Size in Given Year') + theme(legend.position = "none"))
+  }
+    
+})
+
+
+#renderPlotly({
+#  plot_ly(data, x=~data[[input$naics_var]], )
+#})
+
+#ggplot(data = construction, mapping = aes(x = Industry.Title, xend = Industry.Title, y = Emp.2018, yend = 0)) + geom_point() +
+#  geom_segment()+
+#  coord_flip() + 
+#  labs(x='', y='Current Count', title='Employed in Construction')
+
+```
+
+```{r context="render"}
+#plotlyOutput("scatter.ordered")
+plotlyOutput("mod.plot")
+
+```
+
 
 Column {data-width=350}
 -----------------------------------------------------------------------
