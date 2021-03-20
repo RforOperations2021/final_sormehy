@@ -277,19 +277,37 @@ cds <- cds.load[cds.load$GEOID %in% nes_st0418_p$ST,]
 
 cds@data <- merge(cds@data, nes_st0418_p, sort = FALSE, by.x = "GEOID", by.y = "ST")
 
-# Solution
 pal <- colorNumeric(
-  palette = "Purples",
+  palette = "viridis",
   domain = cds$`Total_RCPTOT`)
+pal2 <- colorNumeric(
+  palette = "Blues",
+  domain = cds$`Total_ESTAB`)
 
 output$map.rcp <- renderLeaflet({
+   if(input$count_type == 'Total_RCPTOT'){
   leaflet(data = cds) %>%
   addProviderTiles("Stamen.Toner") %>%
-  addPolygons(color = ~pal(`Total_RCPTOT`), popup = ~paste0("<b>", `Industry.Title`, ":</b> ", round(`Total_RCPTOT`, 2), " years")) %>%
-  addLegend(position = "bottomright", pal = pal, values = cds$`Total_RCPTOT`, title = "Avg Life Expectancy<br>at Birth (years)")
+  addPolygons(color = ~pal(`Total_RCPTOT`), popup = ~paste0("<b>", `Industry.Title`, ":</b> ", round(`Total_RCPTOT`, 2), " $")) %>%
+  addLegend(position = "bottomright", pal = pal, values = cds$`Total_RCPTOT`, title = "Value of Total Receipts filed<br> in given year (USD)")
+   } else {
+    leaflet(data = cds) %>%
+  addProviderTiles("Stamen.Toner") %>%
+  addPolygons(color = ~pal2(`Total_ESTAB`), popup = ~paste0("<b>", `Industry.Title`, ":</b> ", round(`Total_ESTAB`, 2), " estab")) %>%
+  addLegend(position = "bottomright", pal = pal2, values = cds$`Total_ESTAB`, title = "Value of Total Establishments<br> in given year (USD)") 
+   }
 })
 
-
+# pal <- colorNumeric(
+#   palette = "Blues",
+#   domain = cds$`Total_RCPTOT`)
+# 
+# output$map.rcp <- renderLeaflet({
+#   leaflet(data = cds) %>%
+#   addProviderTiles("Stamen.Toner") %>%
+#   addPolygons(color = ~pal(`Total_RCPTOT`), popup = ~paste0("<b>", `Industry.Title`, ":</b> ", round(`Total_RCPTOT`, 2), " years")) %>%
+#   addLegend(position = "bottomright", pal = pal, values = cds$`Total_RCPTOT`, title = "Value of Total Receipts filed<br> in given year (USD)")
+# })
 
 ```
 
