@@ -4,6 +4,7 @@ output:
  flexdashboard::flex_dashboard:
    orientation: rows
    source_code: embed
+   theme: flatly
 runtime: shiny
 ---
 
@@ -40,6 +41,8 @@ require(readxl)
 #data <- read.csv("nes_selectdata.csv")
 data <- read.csv("nes_extratrim.csv")
 #data <- read.csv("~/sormehy_final/nes_trimmed.csv")
+# map <- readOGR("cb_2018_us_state_500k.shp", layer = "cb_2018_us_state_500k", GDAL1_integer64_policy = TRUE)
+#map <- readOGR("cb_2018_us_state_500k.shp")
 
 ## Make the data easier to read for the user
 nes_st0418_p <- data %>% mutate(Industry.Title = ifelse(NAICS == 23, 'Construction',
@@ -167,7 +170,7 @@ output$compare.plot <- renderPlotly({
   ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_RCPTOT/1000000), color = ST_n)) +
     geom_line() + geom_point() +
   labs(title='Industry Growth Over Time (2004 - 2018)', 
-       x = 'Year', y = 'Total Receipts (in millions) in Given Industry & State', color="State") +
+       x = 'Year', y = 'Total Receipts (in millions) in Given State', color="State") +
     facet_wrap('Industry.Title') + theme(
 plot.title = element_text(size=12, face="bold"),
 axis.title.x = element_text(size=13),
@@ -220,7 +223,7 @@ output$compare.plot2 <- renderPlotly({
   ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_RCPTOT/1000000), color = Industry.Title)) +
     geom_line() + geom_point() +
   labs(title='Industry Growth Over Time (2004 - 2018)', 
-       x = 'Year', y = 'Total Receipts (in millions) in Given Industry & State', color="Industry") +
+       x = 'Year', y = 'Total Receipts (in millions) in Given Industry', color="Industry") +
     facet_wrap('ST_n') + theme(
 plot.title = element_text(size=12, face="bold"),
 axis.title.x = element_text(size=13),
@@ -245,6 +248,43 @@ axis.title.y = element_text(size=13)))
 plotlyOutput("compare.plot2")
 ```
 
+
+### Mapping
+
+```{r, controls}
+leaflet() %>%
+  # Basemaps
+  addTiles(group = "OSM (default)") %>%
+  addProviderTiles("Stamen.Toner", group = "Toner") %>%
+  addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
+  # Layers control
+  addLayersControl(
+    baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+```
+
+```{r, polygon}
+# op_data <- read_excel("Geographies_of_Opportunity_Ranking_Well_Being_by_Congressional_District_(114th_Congress).xlsx") %>%
+  # mutate(Number = str_pad(Number, 4, pad = "0"))
+
+cds.load <- readOGR("./cb_2015_us_cd114_500k/cb_2015_us_cd114_500k.shp", layer = "cb_2015_us_cd114_500k", GDAL1_integer64_policy = TRUE)
+
+# Just having the matching GEOID's
+cds <- cds.load[cds.load$GEOID %in% op_data$Number,]
+
+cds@data <- merge(cds@data, op_data, sort = FALSE, by.x = "GEOID", by.y = "Number")
+
+# Solution
+pal <- colorNumeric(
+  palette = "Purples",
+  domain = cds$`Life Expectancy at Birth (years)`)
+
+leaflet(data = cds) %>%
+  addProviderTiles("Stamen.Toner") %>%
+  addPolygons(color = ~pal(`Life Expectancy at Birth (years)`), popup = ~paste0("<b>", `Congressional District`, ":</b> ", round(`Life Expectancy at Birth (years)`, 2), " years")) %>%
+  addLegend(position = "bottomright", pal = pal, values = cds$`Life Expectancy at Birth (years)`, title = "Avg Life Expectancy<br>at Birth (years)")
+```
 
 Column {data-width=350}
 -----------------------------------------------------------------------
