@@ -65,11 +65,11 @@ nes_st0418_p <- data %>% mutate(Industry.Title = ifelse(NAICS == 23, 'Constructi
 NAICS.Categories = c("^4853", "^23", "^48")
 Big.Industries = c('Taxi & Limousine Service', 'Construction', 'Truck Transportation')
 Count.Type = c("Total_RCPTOT", "Total_ESTAB")
-Ind.Industries = c("Taxi and Limousine Service", "Truck Transportation", "General Freight Trucking", "General Freight Trucking, Local", 
+Ind.Industries = c("Taxi & Limousine Service", "Truck Transportation", "General Freight Trucking", "General Freight Trucking, Local", 
            "General Freight Trucking, Long-Distance", "Specialized Freight Trucking", "Construction", "Construction of Buildings", 
-           "Residential Building Construction", "Nonresidential Building Construction", "Heavy and Civil Engineering Construction",
-           "Utility System Construction", "Land Subdivision-1", "Land Subdivision-2", "Highway, Street, and Bridge Construction-1",
-           "Highway, Street, and Bridge Construction-2", "Other Heavy and Civil Engineering Construction-1", "Other Heavy and Civil Engineering Construction-2",
+           "Residential Building Construction", "Nonresidential Building Construction", "Heavy & Civil Engineering Construction",
+           "Utility System Construction", "Land Subdivision", "Highway, Street, & Bridge Construction",
+           "Other Heavy & Civ Eng Construction",
            "Specialty Trade Contractors", "Foundation, Structure, & Building Exterior Contractors", "Building Equipment Contractors", 
            "Electrical Contractors and Other Wiring Installation Contractors", "Plumbing, Heating, and Air-Conditioning Contractors",
            "Other Building Equipment Contractors", "Building Finishing Contractors", "Other Specialty Trade Contractors")
@@ -115,25 +115,6 @@ Page with Tabset {.tabset .tabset-fade}
 ### Segment Plot of Number of Workers in Given Industry
 
 ```{r context="server"}
-
-# industry_subset <- reactive({
-#   nes_st0418_p %>%
-#     filter(
-#       str_detect(Industry.Title, input$ind_ind)
-#     )
-# })
-
-# industry_subset <- reactive({
-#     filter(nes_st0418_p,
-#       Industry.Title %in% input$ind_ind |
-#           ST_n == input$ch_state
-#     )
-# })
-
-# industry_subset <- reactive({
-#     nes_st0418_p[nes_st0418_p$Industry.Title %in% input$ind_ind,]
-#              nes_st0418_p[nes_st0418_p$ST_n %in% input$ch_state,]
-# })
 
 industry_subset <- reactive({
     nes_st0418_p[nes_st0418_p$Industry.Title %in% input$ind_ind & nes_st0418_p$ST_n %in% input$ch_state,]
@@ -193,7 +174,7 @@ output$mod.plot <- renderPlotly({
 })
 
 output$compare.plot <- renderPlotly({
-    if(input$count_type == 'Receipts'){
+    if(input$count_type == 'Total_RCPTOT'){
   ggplotly(ggplot(data = industry_subset(), mapping = aes(x=Year, y=(Total_RCPTOT/1000000), color = ST_n)) +
     geom_line() + geom_point() +
   labs(title='Industry Growth Over Time (2004 - 2018)', 
